@@ -27,8 +27,8 @@ class NotificationsAPIClient(BaseAPIClient):
     def get_notification_by_id(self, id):
         return self.get('/notifications/{}'.format(id))
 
-    def get_all_notifications(self, status=None, template_type=None):
-        data = {}
+    def get_all_notifications(self, status=None, template_type=None, page=1):
+        data = {'page': page}
         if status:
             data.update({
                 'status': status
@@ -37,10 +37,13 @@ class NotificationsAPIClient(BaseAPIClient):
             data.update({
                 'template_type': template_type
             })
-        return self.get(
+
+        noti_data = self.get(
             '/notifications',
             params=data
         )
+
+        return self.add_pagination(noti_data)
 
     def get_notification_statistics_for_day(self, day=None):
         data = {}

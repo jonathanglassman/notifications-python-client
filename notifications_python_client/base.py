@@ -1,8 +1,6 @@
 from __future__ import absolute_import
-from monotonic import monotonic
-from notifications_python_client.errors import HTTPError, InvalidResponse
-from notifications_python_client.authentication import create_jwt_token
-from notifications_python_client.version import __version__
+
+import math
 import logging
 import json
 
@@ -11,8 +9,12 @@ try:
 except ImportError:
     import urllib.parse as urlparse
 
+from monotonic import monotonic
 import requests
 
+from notifications_python_client.errors import HTTPError, InvalidResponse
+from notifications_python_client.authentication import create_jwt_token
+from notifications_python_client.version import __version__
 
 logger = logging.getLogger(__name__)
 
@@ -98,3 +100,22 @@ class BaseAPIClient(object):
                 response,
                 message="No JSON response object could be decoded"
             )
+
+    @staticmethod
+    def add_pagination(data):
+        if 'page_size' not in data:
+            raise ValueError('Cannot add pagination to unpaginated data {}'.format(data))
+
+        # links contains URL hints /notifications?page=1
+        total_pages = math.ceil(data['total'] / data['page_size'])
+        if 'next' in data['links']:
+            page_num = int(data['links']['next'].split('=')[-1]) - 1
+        elif 'prev' in data['links']:
+            page_num = int(data['links']['prev'].split('=')[-1]) + 1
+        else:
+            # not enough data to paginate
+            page_num = total_pages = 1
+
+        data['page_num'] = page_num
+        data['total_pages'] = total_pages
+        return data
